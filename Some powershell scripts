@@ -1,0 +1,54 @@
+# if you are having error of restriction in running script on powershell
+    Set-ExecutionPolicy Unrestricted
+
+#query to install sql server
+Install-DbaInstance -SqlInstance sql03 -Version 2019 -Feature Default -path 'C:\setup' -UpdateSourcePath 'C:\SQLCU'
+
+DSC-Desired state configuration
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Script to install SSMS
+# Define the path where the installer will be saved
+$downloadPath = "C:\temp\SSMS-Setup-ENU.exe"
+
+# Install SSMS silently
+Start-Process -FilePath $downloadPath -ArgumentList "/install /quiet /norestart" -Wait
+
+# Clean up the installer
+Remove-Item -Path $downloadPath -Force
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#DBA Tools to patch sql server on multiple servers, create a notepad on the temp folder  and list all the servers there. Then, the result of the patching can be saved in a notepad too
+$serverlist = Get-Content -Path C:\Temp\serverlist.txt
+
+Update-DbaInstance -ComputerName $serverlist -Restart -Path C:\SQLCU -Confirm:$false | export-csv -Path 'c:\temp\patchresult.csv'
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+#get database on an instance
+Get-DbaDatabase -SqlInstance localhost -ExcludeSystem 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+# create new database
+New-DbaDatabase -SqlInstance sql03 -Name badebank, badedb
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+#backup database
+Backup-DbaDatabase -SqlInstance sql03 -Path C:\SQLbackup  -Type Full
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+#restore database
+Restore-DbaDatabase -SqlInstance sql03 -Path C:\SQLbackup 
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Create AG group
+
+$params = @{
+            Primary = "sql01";
+            Secondary = "sql03";
+            Name = "sqlag001";
+            CLustertype = "wsfc";
+            AvailabilityMode = "AsynchronousCommit";
+            FailoverMode = "Manual";
+            ipAddress = "10.0.0.15";
+            seedingMode = "Automatic"
+            }
+
+New-DBAAvailabilityGroup @params
+
