@@ -1,0 +1,13 @@
+# Open Powershell and check for supported protocols by using
+[Net.ServicePointManager]::SecurityProtocol
+
+# Run the following 3 cmdlets to set .NET Framework strong cryptography registry keys:
+    # Set PowerShell to TLS 1.2
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    # Set strong cryptography on 64 bit .Net Framework (version 4 and above)
+    Set-ItemProperty -Path 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\.NetFramework\v4.0.30319' -Name 'SchUseStrongCrypto' -Value '1' -Type DWord
+    # Set strong cryptography on 32 bit .Net Framework (version 4 and above)
+    Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\.NetFramework\v4.0.30319' -Name 'SchUseStrongCrypto' -Value '1' -Type DWord
+
+# Restart Powershell and check again for supported protocol by using 
+[Net.ServicePointManager]::SecurityProtocol
