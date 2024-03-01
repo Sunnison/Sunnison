@@ -1,0 +1,19 @@
+DECLARE
+	 @IndexName	sysname = 'UQ_CountryCodes'
+	,@TableName	sysname = 'CountryCodes'
+
+DECLARE
+	 @IndexNameWithBrackets	sysname = QUOTENAME(@IndexName)
+	,@TableNameWithBrackets	sysname = QUOTENAME(@TableName)
+
+;WITH XMLNAMESPACES (DEFAULT N'http://schemas.microsoft.com/sqlserver/2004/07/showplan', N'http://schemas.microsoft.com/sqlserver/2004/07/showplan' AS p)  
+SELECT 
+    cp.objtype, 
+    cp.usecounts, 
+    st.text, 
+    qp.query_plan
+FROM sys.dm_exec_cached_plans cp
+CROSS APPLY sys.dm_exec_sql_text(cp.plan_handle) AS st
+CROSS APPLY sys.dm_exec_query_plan(cp.plan_handle) AS qp
+WHERE st.text LIKE '%' + @TableName + '%'
+AND qp.query_plan.exist('//Object[@Index=sql:variable("@IndexNameWithBrackets") and @Table=sql:variable("@TableNameWithBrackets")]') = 1
