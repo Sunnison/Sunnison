@@ -1,0 +1,20 @@
+DECLARE
+	 @IndexName	sysname = 'UQ_CountryCodes'
+	,@TableName	sysname = 'CountryCodes'
+
+DECLARE
+	 @IndexNameWithBrackets	sysname = QUOTENAME(@IndexName)
+	,@TableNameWithBrackets	sysname = QUOTENAME(@TableName)
+
+;WITH XMLNAMESPACES (DEFAULT N'http://schemas.microsoft.com/sqlserver/2004/07/showplan', N'http://schemas.microsoft.com/sqlserver/2004/07/showplan' AS p)  
+SELECT
+    q.query_id,
+    q.query_text_id,
+    qt.query_sql_text,
+    qp.query_plan_xml
+FROM sys.query_store_query AS q
+INNER JOIN sys.query_store_plan AS p ON q.query_id = p.query_id
+INNER JOIN sys.query_store_query_text AS qt ON q.query_text_id = qt.query_text_id
+OUTER APPLY (SELECT CAST(p.query_plan AS XML) AS query_plan_xml) AS qp
+WHERE qt.query_sql_text LIKE '%' + @TableName + '%'
+AND qp.query_plan_xml.exist('//Object[@Index=sql:variable("@IndexNameWithBrackets") and @Table=sql:variable("@TableNameWithBrackets")]') = 1Tsq
